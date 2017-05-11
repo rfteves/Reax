@@ -174,6 +174,7 @@ public class PageServer extends Thread {
         EntityFacade.add(new ProductChange());
         EntityFacade.executeQuery("truncate productchanges");
         do {
+            //server.browsePages("productid", data.getSource().getString("productid"));
             Packet p = new Packet();
             p.setProductid(data.getSource().getString("productid"));
             p.setVariantid(data.getSource().getString("variantid"));
