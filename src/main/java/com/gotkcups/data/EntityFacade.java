@@ -17,12 +17,22 @@ import javax.persistence.Query;
  * @author rfteves
  */
 public class EntityFacade {
+    static {
+        
+    }
     private final static EntityManagerFactory emf = Persistence.createEntityManagerFactory("com.gotkcups.data.ProductChanges");
     public static void executeQuery(String query) {
         EntityManager em = emf.createEntityManager();
+        /*System.out.println("user : " + em.getProperties().get("javax.persistence.jdbc.user"));
+        System.out.println("pswd: " + em.getProperties().get("javax.persistence.jdbc.password"));
+        System.out.println("urls : " + em.getProperties().get("javax.persistence.jdbc.url"));
         em.getProperties().put("javax.persistence.jdbc.user", Utilities.getApplicationProperty("jdbc.user"));
         em.getProperties().put("javax.persistence.jdbc.password", Utilities.getApplicationProperty("jdbc.password"));
         em.getProperties().put("javax.persistence.jdbc.url", Utilities.getApplicationProperty("jdbc.url.persistence"));
+        System.out.println("again");
+        System.out.println("user : " + em.getProperties().get("javax.persistence.jdbc.user"));
+        System.out.println("pswd: " + em.getProperties().get("javax.persistence.jdbc.password"));
+        System.out.println("urls : " + em.getProperties().get("javax.persistence.jdbc.url"));*/
         Query truncate = em.createNativeQuery(query);
         em.getTransaction().begin();
         truncate.executeUpdate();
@@ -31,7 +41,9 @@ public class EntityFacade {
     }
     
     public static <T> void add(T object) {
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("com.gotkcups.data.ProductChanges");
+        
+        //EntityManagerFactory emf = Persistence.createEntityManagerFactory("com.gotkcups.data");
+        //emf.getProperties().put("javax.persistence.jdbc.user", "trial");
         
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
