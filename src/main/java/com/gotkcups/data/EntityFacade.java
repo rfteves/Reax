@@ -5,22 +5,24 @@
  */
 package com.gotkcups.data;
 
-import com.gotkcups.data.Product.ProductStatus;
-import com.gotkcups.json.Utilities;
+import java.util.Collection;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
+import javax.persistence.criteria.CriteriaQuery;
 
 /**
  *
  * @author rfteves
  */
 public class EntityFacade {
-    static {
-        
+    
+    public static void main(String[]args) {
+        EntityFacade.add(new ProductInfo());
+        EntityFacade.add(new ProductChange());
     }
-    private final static EntityManagerFactory emf = Persistence.createEntityManagerFactory("com.gotkcups.data.ProductChanges");
+    private final static EntityManagerFactory emf = Persistence.createEntityManagerFactory("Reax");
     public static void executeQuery(String query) {
         EntityManager em = emf.createEntityManager();
         /*System.out.println("user : " + em.getProperties().get("javax.persistence.jdbc.user"));
@@ -41,10 +43,7 @@ public class EntityFacade {
     }
     
     public static <T> void add(T object) {
-        
-        //EntityManagerFactory emf = Persistence.createEntityManagerFactory("com.gotkcups.data");
-        //emf.getProperties().put("javax.persistence.jdbc.user", "trial");
-        
+        if (object == null) return;
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
         em.persist(object);
@@ -52,7 +51,23 @@ public class EntityFacade {
         em.close();
     }
     
-    public static ProductChange create(ProductInfo product, ProductStatus reason) {
+    public static <T> void bulk(Collection<T> objects) {
+        EntityManager em = emf.createEntityManager();
+        em.getTransaction().begin();
+        objects.stream().forEach(em::persist);
+        em.getTransaction().commit();
+        em.close();
+    }
+    
+    public static <T> Collection findAll(Class<T> entityClass) {
+        EntityManager em = emf.createEntityManager();
+        em.getTransaction().begin();
+        CriteriaQuery query = em.getCriteriaBuilder().createQuery();
+        query.select(query.from(entityClass));
+        return em.createQuery(query).getResultList();
+    }
+    
+    public static ProductChange create(ProductInfo product)  {
         ProductChange change = new ProductChange();
         change.setDescription(product.getDescription());
         change.setCurrentListPrice(product.getMaxprice());
@@ -62,7 +77,7 @@ public class EntityFacade {
         change.setListPrice(product.getListPrice());
         change.setPrice(product.getPrice());
         change.setProductid(product.getProductid());
-        change.setReason(reason);
+        change.setReason(product.getProductStatus());
         change.setVariantid(product.getVariantid());
         change.setVariantsku(product.getVariantsku());
         return change;

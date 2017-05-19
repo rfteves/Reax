@@ -23,7 +23,7 @@ import org.apache.commons.io.FileUtils;
  */
 public class GsonMapper {
 
-    public static String DEBUG_ELEMENT = "xlistPrice";
+    public static String DEBUG_ELEMENT = "availableSKUs";
 
     public static void main(String[] s) throws Exception {
         String data = FileUtils.readFileToString(new File("./productsx.json"), "UTF-8");
@@ -42,6 +42,7 @@ public class GsonMapper {
     }
 
     private GsonData parent;
+    private GsonData[] parentObj = new GsonData[1];
 
     private void mapvalues(JsonElement element, GsonData root, String putkey) {
         if (DEBUG_ELEMENT.equals(putkey)) {
@@ -60,23 +61,35 @@ public class GsonMapper {
                 if (DEBUG_ELEMENT.equals(entry.getKey())) {
                     System.out.println();
                 }
-                GsonData child = GsonData.getInstance(entry.getKey());
+                GsonData ancestor = null;
                 if (parent == null) {
-                    parent = child;
+                    parent = GsonData.getInstance();
+                    parentObj[0] = parent;
+                    ancestor = parent;
+                } else if (root == null) {
+                    ancestor = parentObj[0];
+                    GsonData child = GsonData.getInstance(entry.getKey());
+                    ancestor.put(entry.getKey(), child);
+                    ancestor = child;
                 } else {
+                    GsonData child = GsonData.getInstance(entry.getKey());
                     root.put(entry.getKey(), child);
+                    ancestor = child;
                 }
-                mapvalues(entry.getValue(), child, null);
+                mapvalues(entry.getValue(), ancestor, entry.getKey());
             });
         } else if (element.isJsonArray()) {
-            JsonArray arrays = element.getAsJsonArray();
             GsonData ancestor = null;
-            if (root == null) {
-                ancestor = GsonData.getInstance();
-                parent = ancestor;
+            if (parent == null) {
+                parent = GsonData.getInstance();
+                parentObj[0] = parent;
+                ancestor = parent;
+            } else if (root == null) {
+                ancestor = parentObj[0];
             } else {
                 ancestor = root;
             }
+            JsonArray arrays = element.getAsJsonArray();
             if (arrays.size() == 0) {
                 ancestor.add(null); // So we know property is an array
             } else {

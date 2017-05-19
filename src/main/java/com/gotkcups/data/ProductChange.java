@@ -32,7 +32,7 @@ public class ProductChange implements Serializable {
     private String variantid;
     private String variantsku;
     private String description;
-    private ProductStatus reason;
+    private String reason;
     private double price;
     private double currentPrice;
     private double listPrice;
@@ -232,15 +232,15 @@ public class ProductChange implements Serializable {
     /**
      * @return the reason
      */
-    public ProductStatus getReason() {
-        return reason;
+    public String getReason() {
+        return reason.toString();
     }
 
     /**
      * @param reason the reason to set
      */
-    public void setReason(ProductStatus reason) {
-        this.reason = reason;
+    public void setReason(ProductStatus ps) {
+        this.reason = ps.toString();
     }
 
     /**

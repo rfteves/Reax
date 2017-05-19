@@ -7,7 +7,7 @@ package com.gotkcups.shopify;
 
 import com.gotkcups.json.GsonData;
 import java.util.Map;
-import com.gotkcups.io.HttpTool;
+import com.gotkcups.io.RestClient;
 import com.gotkcups.json.GsonMapper;
 import java.io.IOException;
 import java.util.HashMap;
@@ -29,12 +29,13 @@ public class Products {
 	int limit = 10;
 	int page = 0;
 	while (limit > 0) {
-	    String take = HttpTool.getProducts(env, limit, ++page, params);
+	    String take = RestClient.getProducts(env, limit, ++page, params);
             System.out.println(take);
 	    if (object == null) {
 		object = GsonMapper.getInstance(take);
 	    } else {
                 next = GsonMapper.getInstance(take);
+                next.getChildren().forEach(object.getChildren()::add);
 	    }
 	    if (next.getChildren().size() < 50) {
 		break;

@@ -32,11 +32,14 @@ public class CostcoProcessor {
         GsonData options = null;
         GsonData products = null;
         if (html == null) {
-            uds.stream().forEach(p -> p.getProduct().setStatus(Product.ProductStatus.PAGE_NOT_AVAILABLE));
             return;
         }
         if (html.indexOf("<h1>Product Not Found</h1>") > 0) {
-            uds.stream().forEach(p -> p.getProduct().setStatus(Product.ProductStatus.PRODUCT_NOT_FOUND));
+            if (html.indexOf("is not valid for the current contract") != -1) {
+                uds.stream().forEach(p -> p.getProduct().setStatus(Product.ProductStatus.PRODUCT_NOT_VALID));
+            } else {
+                uds.stream().forEach(p -> p.getProduct().setStatus(Product.ProductStatus.PRODUCT_NOT_FOUND));
+            }
             return;
         }
         if (html.indexOf("var options = ") > 0) {
@@ -58,7 +61,7 @@ public class CostcoProcessor {
             } catch (IOException ex) {
                 Logger.getLogger(CostcoProcessor.class.getName()).log(Level.SEVERE, null, ex);
             }
-            if (options == null) {
+            if (options == null || options.getChildren().get(0).getChildren().size() == 0) {
                 GsonData dg = products.getChildren().get(0).getChildren().get(0);
                 if (dg.getString("listPrice") != null) {
                     String str = Base64Coder.decode(dg.getString("listPrice"));
@@ -149,14 +152,7 @@ public class CostcoProcessor {
                     }
                 }
             }
+            uds.stream().map(ud -> ud.getProduct()).filter(ud -> !ud.isInstock()).forEach(ud -> {ud.setStatus(ProductStatus.PRODUCT_OUT_OF_STOCK); ud.setInstock(false);});
         }
-    }
-    
-    private static int retrieveMinQty(String html) {
-        int minqty = 1;
-        String[]min = {"<li>Minimum Order Quantity: [0-9]{1,}</li>",
-            "Minimum Order Quantity: [0-9]{1,}"
-        };
-        return minqty;
     }
 }

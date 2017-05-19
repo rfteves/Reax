@@ -7,6 +7,7 @@ package com.gotkcups.pageprocessors;
 
 import com.gotkcups.data.ProductInfo;
 import com.gotkcups.data.Product;
+import com.gotkcups.data.Product.ProductStatus;
 import com.gotkcups.json.GsonData;
 import com.gotkcups.json.GsonMapper;
 import com.gotkcups.servers.UrlProductInfo;
@@ -41,9 +42,9 @@ public class SamsclubProcessor {
             int start = html.indexOf("<div id=moneyBoxJson style=display:none>") + "<div id=moneyBoxJson style=display:none>".length();
             int end = html.indexOf("</div>", start);
             pad.setLength(0);
-            pad.append("{\"moneyBoxJson\":");
+            //pad.append("{\"moneyBoxJson\":");
             pad.append(StringEscapeUtils.unescapeHtml(html.substring(start, end)));
-            pad.append("}");
+            //pad.append("}");
             try {
                 products = GsonMapper.getInstance(pad.toString());
             } catch (IOException ex) {
@@ -71,6 +72,7 @@ public class SamsclubProcessor {
                     }
                 }
             }
+            uds.stream().map(ud -> ud.getProduct()).filter(ud -> !ud.isInstock()).forEach(ud -> {ud.setStatus(ProductStatus.PRODUCT_OUT_OF_STOCK); ud.setInstock(false);});
         } else if (html.indexOf(id) != -1) {
             UrlProductInfo ud = uds.get(0);
             if (html.indexOf("<link itemprop=availability href=\"http://schema.org/InStock\"/>") > 0
@@ -129,7 +131,8 @@ public class SamsclubProcessor {
 
     private static double retrieveCost(String html) {
         double retval = -1;
-        String[] patterns = {"<span class=hidden itemprop=price>[0-9]{1,}.[0-9]{2}</span>",
+        String[] patterns = {"<span class=\"striked strikedPrice\">\\$[0-9]{1,}.[0-9]{2}</span>",
+            "<span class=hidden itemprop=price>[0-9]{1,}.[0-9]{2}</span>",
             "<span itemprop=priceCurrency content=USD>\\$</span><span itemprop=price>[0-9]{1,}.[0-9]{2}</span>"};
         for (String pattern : patterns) {
             Matcher m = Pattern.compile(pattern).matcher(html);

@@ -33,11 +33,15 @@ public class AnyTest {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws Exception {
+         json();
+    }
+    
+    private static void displayClassFields() {
+        
         ProductChange pc = new ProductChange();
         java.lang.reflect.Field[] fields = ProductChange.class.getDeclaredFields();
         System.out.println("fields: " + fields.length);
         Arrays.asList(fields).stream().forEach(o -> System.out.println("X: " + o.getName()));
-         
     }
     
     private static void lastTest() throws Exception {
@@ -59,6 +63,16 @@ public class AnyTest {
         KeurigSelect select  = (KeurigSelect)Utilities.objectify(xml, new KeurigSelect());
         System.out.println(select.getOption().get(0).getDataCode());
         System.out.println(select.getOption().get(1).getDataCode());
+    }
+    
+    
+    
+    private static void json() throws IOException {
+        
+        String json = FileUtils.readFileToString(new File("D:\\Users\\rfteves\\Documents\\options.json"), "UTF-8");
+        GsonData data = GsonMapper.getInstance(json);
+        System.out.println(data.getChildren());
+        System.out.println(data.getMap());
     }
     
     

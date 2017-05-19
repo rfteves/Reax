@@ -6,60 +6,36 @@
 package com.gotkcups.data;
 
 import java.util.Comparator;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlRootElement;
+import org.eclipse.persistence.annotations.Customizer;
 
 /**
  *
  * @author rfteves
  */
 @XmlRootElement
+@Entity
+@Table(name="productinfos")
+@Customizer(ColumnPositionCustomizer.class) 
 public class ProductInfo implements Product, Comparator<ProductInfo>, Comparable<ProductInfo> {
 
-    /**
-     * @return the minqty
-     */
-    public int getMinqty() {
-        return minqty;
-    }
-
-    /**
-     * @param minqty the minqty to set
-     */
-    public void setMinqty(int minqty) {
-        this.minqty = minqty;
-    }
-
-    /**
-     * @return the rowid
-     */
-    public int getRowid() {
-        return rowid;
-    }
-
-    /**
-     * @param rowid the rowid to set
-     */
-    public void setRowid(int rowid) {
-        this.rowid = rowid;
-    }
-
-    /**
-     * @return the status
-     */
-    public ProductStatus getStatus() {
-        return status;
-    }
-
-    /**
-     * @param status the status to set
-     */
-    public void setStatus(ProductStatus status) {
-        this.status = status;
-    }
+    private static long serialVersionUID = 1L;
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private Long id;
     private String productid;
     private String variantid;
     private String description;
     private String variantsku;
+    private String alpha;
+    private String status;
+    private String reason;
     private boolean instock;
     private boolean currentStock;
     private boolean taxable;
@@ -68,14 +44,12 @@ public class ProductInfo implements Product, Comparator<ProductInfo>, Comparable
     private double defaultCost;
     private double price;
     private double listPrice;
-    private double shipping;
-    private double defaultShipping;
     private double minprice;
     private double maxprice;
+    private double shipping;
+    private double defaultShipping;
     private int minqty;
     private int defaultMinqty;
-    private ProductStatus status;
-    private int rowid;
     
     public ProductInfo() {
         this.cost = -1;
@@ -237,7 +211,16 @@ public class ProductInfo implements Product, Comparator<ProductInfo>, Comparable
 
     @Override
     public int compare(ProductInfo o1, ProductInfo o2) {
-        return o1.getPrice() < o2.getPrice() ? -1 : (o1.getPrice() == o2.getPrice() ? 0 : 1);
+        if (o1.getCost() == -1 && o2.getCost() == -1) {
+            return 0;
+        } else if (o1.getCost() == -1) {
+            return 1;
+        } else if (o2.getCost() == -1) {
+            return -1;
+        } else {
+            return o1.getPrice() < o2.getPrice() ? -1 : (o1.getPrice() == o2.getPrice() ? 0 : 1);
+        }
+        
     }
 
     /**
@@ -342,5 +325,79 @@ public class ProductInfo implements Product, Comparator<ProductInfo>, Comparable
     public int compareTo(ProductInfo o) {
         return this.compare(this, o);
     }
+
+    /**
+     * @return the minqty
+     */
+    public int getMinqty() {
+        return minqty;
+    }
+
+    /**
+     * @param minqty the minqty to set
+     */
+    public void setMinqty(int minqty) {
+        this.minqty = minqty;
+    }
+    /**
+     * @return the status
+     */
+    public String getStatus() {
+        return status.toString();
+    }
+
+    /**
+     * @param status the status to set
+     */
+    public void setStatus(ProductStatus ps) {
+        this.status = ps.toString();
+    }
     
+    /**
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * @param id the id to set
+     */
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    /**
+     * @return the alpha
+     */
+    public String getAlpha() {
+        return alpha;
+    }
+
+    /**
+     * @param alpha the alpha to set
+     */
+    public void setAlpha(ProductStatus ps) {
+        this.alpha = ps.toString();
+    }
+
+    /**
+     * @return the reason
+     */
+    public String getReason() {
+        return reason;
+    }
+
+    /**
+     * @param reason the reason to set
+     */
+    public void setReason(ProductStatus productStatus) {
+        this.productStatus = productStatus;
+        this.reason = productStatus.toString();
+    }
+    
+    private transient ProductStatus productStatus;
+    public ProductStatus getProductStatus() {
+        return this.productStatus;
+    }
 }

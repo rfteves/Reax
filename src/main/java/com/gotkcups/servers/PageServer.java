@@ -18,7 +18,7 @@ import com.gotkcups.data.Product;
 import com.gotkcups.data.ProductChange;
 import com.gotkcups.data.ProductInfo;
 import com.gotkcups.pageprocessors.ProductProcessor;
-import io.mlundela.rxjava.PageReader;
+import com.gotkcups.io.PageReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -127,10 +127,9 @@ public class PageServer extends Thread {
                 product.setVariantid(data.getSource().getString("variantid"));
                 product.setProductid(data.getSource().getString("productid"));
                 product.setVariantsku(data.getSource().getString("variantsku"));
-                product.setRowid(data.getSource().getRow() + 1);
                 product.setInstock(false);
                 product.setCurrentStock(data.getSource().getString("instock").equalsIgnoreCase("y"));
-                product.setStatus(Product.ProductStatus.PRODUCT_NOT_FOUND);
+                product.setStatus(Product.ProductStatus.PAGE_NOT_AVAILABLE);
                 product.setShipping(-1);
                 product.setMinprice(data.getSource().getBigDecimal("minprice").doubleValue());
                 product.setMaxprice(data.getSource().getBigDecimal("maxprice").doubleValue());
@@ -158,54 +157,7 @@ public class PageServer extends Thread {
     }
 
     public static void main(String[] args) {
-        // ('7035660231' , '7035660423' , '9589263818')
-        long start = System.currentTimeMillis();
-        System.out.println("start: " + new Date(start));
-        Data data = Data.getData();
-        data.getSourcedb().setConnection(new ConnectionDescriptor(
-                Utilities.getApplicationProperty("jdbc.url.amazonkeurig"), Utilities.getApplicationProperty("jdbc.user"), Utilities.getApplicationProperty("jdbc.password"), false, "com.mysql.jdbc.Driver"));
-        data.getSource().setQuery(new QueryDescriptor(data.getSourcedb(),
-                //"select * from shopifyurls where productid is not null and hidden!='Y' and url like 'http%' and variantsku like '%s' and description like '%swissgear%' group by productid order by productid,variantid,url",
-                //"select * from shopifyurls where productid like '%' and producttype like '%' and description like '%' and hidden!='Y' and url like 'http%' and variantsku like '%' group by productid order by productid,variantid,url",
-                "select * from shopifyurls where productid is not null and productid like '%' and hidden!='Y' and url like 'http%' group by productid,variantid order by productid,variantid,url",
-                null, true, Load.ALL));
-        data.getSource().open();
-        StringBuilder display = new StringBuilder();
-        EntityFacade.add(new ProductChange());
-        EntityFacade.executeQuery("truncate productchanges");
-        do {
-            Packet p = new Packet();
-            p.setProductid(data.getSource().getString("productid"));
-            p.setVariantid(data.getSource().getString("variantid"));
-            PageServer.fetch(p);
-            synchronized (p) {
-                try {
-                    p.wait();
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(PageServer.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-            System.out.println("+++");
-            ProductInfo o = null;
-            Optional<ProductInfo> optional = p.getProducts().stream().filter(oh -> oh.isInstock()).findFirst();
-            if (optional.isPresent()) {
-                o = optional.get();
-                if (Math.abs(o.getPrice() - o.getMinprice()) > 1.00) {
-                    ProductChange change = EntityFacade.create(o, Product.ProductStatus.PRODUCT_PRICE_CHANGE);
-                    EntityFacade.add(change);
-                }
-                if (o.isInstock() != o.isCurrentStock()) {
-                    ProductChange change = EntityFacade.create(o, Product.ProductStatus.PRODUCT_IN_STOCK);
-                    EntityFacade.add(change);
-                }
-            }
-            final ProductInfo first = o;
-        } while (data.getSource().next());
-
-        long end = System.currentTimeMillis();
-        System.out.println("start: " + new Date(start));
-        System.out.println("end: " + new Date(end));
-        System.exit(0);
+        // ('7035660231' , '7035660423' , '9589263818')503304
     }
 
 }

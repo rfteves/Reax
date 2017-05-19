@@ -5,7 +5,6 @@
  */
 package com.gotkcups.io;
 
-import com.gotkcups.json.GsonData;
 import com.gotkcups.json.Utilities;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,12 +22,12 @@ import org.apache.http.impl.client.HttpClientBuilder;
  *
  * @author rfteves
  */
-public class HttpTool {
+public class RestClient {
 
     private static Map<String, String> KEYS = new HashMap<String, String>();
 
     static {
-        HttpTool.initKeys();
+        RestClient.initKeys();
     }
 
     public static String processGet(String url) {
@@ -154,36 +153,39 @@ public class HttpTool {
     }
 
     public static String getProduct(String env, long id) {
-        StringBuilder sb = new StringBuilder(HttpTool.getKeyPass(env));
+        StringBuilder sb = new StringBuilder(RestClient.getKeyPass(env));
         sb.append(String.format("/admin/products/%d.json", id));
-        return HttpTool.processGet(sb.toString());
+        return RestClient.processGet(sb.toString());
     }
 
     public static String getProductVariant(String env, String variant_id) {
-        StringBuilder sb = new StringBuilder(HttpTool.getKeyPass(env));
+        StringBuilder sb = new StringBuilder(RestClient.getKeyPass(env));
         sb.append(String.format("/admin/variants/%s.json", variant_id));
-        return HttpTool.processGet(sb.toString());
+        return RestClient.processGet(sb.toString());
     }
 
     public static String getCollects(String env) {
-        StringBuilder sb = new StringBuilder(HttpTool.getKeyPass(env));
+        StringBuilder sb = new StringBuilder(RestClient.getKeyPass(env));
         sb.append("/admin/collects.json");
-        return HttpTool.processGet(sb.toString());
+        return RestClient.processGet(sb.toString());
     }
 
     public static String getProducts(String env, int limit, int page, Map<String, String> params) {
-        StringBuilder url = new StringBuilder(HttpTool.getKeyPass(env));
+        StringBuilder url = new StringBuilder(RestClient.getKeyPass(env));
         if (params.containsKey("id")) {
             url.append(String.format("/admin/products/%s.json?limit=%d&page=%d&", params.remove("id").toString(), limit, page));
         } else {
             url.append(String.format("/admin/products.json?limit=%d&page=%d&", limit, page));
         }
-        HttpTool.processParams(url, params);
-        return HttpTool.processGet(url.toString());
+        RestClient.processParams(url, params);
+        return RestClient.processGet(url.toString());
     }
 
     private static void processParams(StringBuilder url, Map<String, String> params) {
         if (params != null && params.size() > 0) {
+            if (!url.toString().contains("?")) {
+                url.append("?");
+            }
             for (String key : params.keySet()) {
                 url.append(key);
                 url.append("=");
@@ -200,36 +202,37 @@ public class HttpTool {
     }
 
     public static String createMetaField(String env, long productId, Map<String, Object> params) {
-        StringBuilder url = new StringBuilder(HttpTool.getKeyPass(env));
+        StringBuilder url = new StringBuilder(RestClient.getKeyPass(env));
         url.append(String.format("/admin/products/%d/metafields.json", productId));
-        String metaobject = HttpTool.createMetafieldData(params);
-        return HttpTool.processPost(url.toString(), metaobject);
+        String metaobject = RestClient.createMetafieldData(params);
+        return RestClient.processPost(url.toString(), metaobject);
     }
 
     public static String createProduct(String env, String json) {
-        StringBuilder url = new StringBuilder(HttpTool.getKeyPass(env));
+        StringBuilder url = new StringBuilder(RestClient.getKeyPass(env));
         url.append(String.format("/admin/products.json", ""));
-        return HttpTool.processPost(url.toString(), json);
+        return RestClient.processPost(url.toString(), json);
     }
 
     public static void deleteMetaField(String env, long productId, long metaid) {
-        StringBuilder url = new StringBuilder(HttpTool.getKeyPass(env));
+        StringBuilder url = new StringBuilder(RestClient.getKeyPass(env));
         url.append(String.format("/admin/products/%d/metafields/%d.json", productId, metaid));
-        HttpTool.processDelete(url.toString());
+        RestClient.processDelete(url.toString());
     }
 
     public static String getCollects(String env, int limit, int page, Map<String, String> params) {
-        StringBuilder sb = new StringBuilder(HttpTool.getKeyPass(env));
+        StringBuilder sb = new StringBuilder(RestClient.getKeyPass(env));
         StringBuilder url = new StringBuilder(String.format("/admin/custom_collections.json?limit=%d&page=%d&", limit, page));
-        HttpTool.processParams(url, params);
+        RestClient.processParams(url, params);
         sb.append(url);
-        return HttpTool.processGet(sb.toString());
+        return RestClient.processGet(sb.toString());
     }
 
-    public static String updateProduct(String env, long productId, String variantId, double price, double comparePrice, int inStockQty) {
-        StringBuilder sb = new StringBuilder(HttpTool.getKeyPass(env));
+    public static String getProduct(String env, long productId, Map<String, String>params) {
+        StringBuilder sb = new StringBuilder(RestClient.getKeyPass(env));
         sb.append(String.format("/admin/products/%d.json", productId));
-        String so = HttpTool.processGet(sb.toString());
+        RestClient.processParams(sb, params);
+        String so = RestClient.processGet(sb.toString());
         return so;
     }
 
@@ -264,8 +267,8 @@ public class HttpTool {
     }
 
     public static String getProductMetafields(String env, long productId) {
-        StringBuilder sb = new StringBuilder(HttpTool.getKeyPass(env));
+        StringBuilder sb = new StringBuilder(RestClient.getKeyPass(env));
         sb.append(String.format("/admin/products/%d/metafields.json", productId));
-        return HttpTool.processGet(sb.toString());
+        return RestClient.processGet(sb.toString());
     }
 }

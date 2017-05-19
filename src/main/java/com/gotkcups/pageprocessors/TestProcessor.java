@@ -6,7 +6,7 @@
 package com.gotkcups.pageprocessors;
 
 import com.gotkcups.json.GsonData;
-import io.mlundela.rxjava.PageReader;
+import com.gotkcups.io.PageReader;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.StringEscapeUtils;

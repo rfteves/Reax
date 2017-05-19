@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package io.mlundela.rxjava;
+package com.gotkcups.io;
 
 import com.gotkcups.servers.HtmlCached;
 import java.net.URL;

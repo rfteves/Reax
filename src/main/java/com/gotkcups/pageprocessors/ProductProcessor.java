@@ -5,6 +5,8 @@
  */
 package com.gotkcups.pageprocessors;
 
+import com.gotkcups.data.EntityFacade;
+import com.gotkcups.data.ProductInfo;
 import com.gotkcups.servers.UrlProductInfo;
 import java.util.Collection;
 import java.util.List;
@@ -20,6 +22,7 @@ public abstract class ProductProcessor {
     public final static double MARKUP_DISCOUNT = 0.035;
 
     public static void costing(List<UrlProductInfo> uds) {
+        System.out.println(uds.get(0).getUrl());
         if (uds.get(0).getUrl().contains("costco.com")) {
             CostcoProcessor.costing(uds);
         } else if (uds.get(0).getUrl().contains("keurig.com")) {
@@ -39,14 +42,13 @@ public abstract class ProductProcessor {
             }
             o.setListPrice(listPrice);
         });
-        System.out.println();
     }
 
     private static double calculatePrice(double cost, int minqty, double shipping, boolean taxable, boolean discounted) {
         double price = cost * minqty;
         price += shipping;
-        if (minqty >= 5) {
-            price -= minqty * 0.25;
+        if (minqty >= 5 && price > 50) {
+            price -= minqty * 0.36;
         }
         if (taxable) {
             price /= (MARKUP_TAXABLE - (discounted ? MARKUP_DISCOUNT : 0.0));
