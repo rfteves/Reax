@@ -11,7 +11,7 @@ import com.gotkcups.data.Product.ProductStatus;
 import com.gotkcups.json.GsonData;
 import com.gotkcups.json.GsonMapper;
 import com.gotkcups.servers.UrlProductInfo;
-import io.mlundela.rxjava.In;
+import com.gotkcups.io.In;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
