@@ -11,21 +11,18 @@ import com.borland.dx.sql.dataset.Load;
 import com.borland.dx.sql.dataset.QueryDescriptor;
 import com.cwd.db.ColumnFactory;
 import com.cwd.db.Data;
-import com.gotkcups.data.EntityFacade;
 import com.gotkcups.json.Utilities;
 import com.gotkcups.data.Packet;
 import com.gotkcups.data.Product;
-import com.gotkcups.data.ProductChange;
+import com.gotkcups.data.Product.ProductStatus;
 import com.gotkcups.data.ProductInfo;
 import com.gotkcups.pageprocessors.ProductProcessor;
 import com.gotkcups.io.PageReader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,7 +44,7 @@ public class PageServer extends Thread {
 
     private Queue<Packet> IDS = new LinkedList<>();
 
-    public static PageServer fetch(Packet packet) {
+    public static PageServer fetchCostAndPricing(Packet packet) {
         SERVER.register(packet);
         return SERVER;
     }
@@ -89,6 +86,7 @@ public class PageServer extends Thread {
         // Get the html page of each product then group it by url
         Map<String, List<UrlProductInfo>> map = udata.stream().map(p -> {
             PageReader.fetch(p);
+            
             return p;
         }).collect(Collectors.groupingBy(lll -> lll.getUrl()));
         // Now resolve product availability
@@ -127,9 +125,10 @@ public class PageServer extends Thread {
                 product.setVariantid(data.getSource().getString("variantid"));
                 product.setProductid(data.getSource().getString("productid"));
                 product.setVariantsku(data.getSource().getString("variantsku"));
+                product.setDefaultInv(data.getSource().getBigDecimal("instockqty").intValue());
                 product.setInstock(false);
                 product.setCurrentStock(data.getSource().getString("instock").equalsIgnoreCase("y"));
-                product.setStatus(Product.ProductStatus.PAGE_NOT_AVAILABLE);
+                product.setStatus(ProductStatus.PAGE_NOT_AVAILABLE);
                 product.setShipping(-1);
                 product.setMinprice(data.getSource().getBigDecimal("minprice").doubleValue());
                 product.setMaxprice(data.getSource().getBigDecimal("maxprice").doubleValue());
@@ -146,6 +145,7 @@ public class PageServer extends Thread {
             data.getSourcedb().setConnection(new ConnectionDescriptor(
                     Utilities.getApplicationProperty("jdbc.url.amazonkeurig"), Utilities.getApplicationProperty("jdbc.user"),
                     Utilities.getApplicationProperty("jdbc.password"), false, "com.mysql.jdbc.Driver"));
+            data.getSourcedb().getJdbcConnection().setAutoCommit(false);
             data.getSource().setQuery(new QueryDescriptor(data.getSourcedb(),
                     "select * from shopifyurls where productid=:productid and variantid=:variantid",
                     data.getParameters(), true, Load.ALL));

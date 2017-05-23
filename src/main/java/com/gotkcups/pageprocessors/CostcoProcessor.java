@@ -29,6 +29,10 @@ public class CostcoProcessor {
 
     public static void costing(List<UrlProductInfo> uds) {
         String html = uds.get(0).getHtml();
+        dig(html, uds);
+    }
+    
+    private static void dig(String html, List<UrlProductInfo> uds) {
         GsonData options = null;
         GsonData products = null;
         if (html == null) {

@@ -12,6 +12,7 @@ import com.cwd.db.Data;
 import com.gotkcups.data.EntityFacade;
 import com.gotkcups.data.Packet;
 import com.gotkcups.data.Product;
+import com.gotkcups.data.Product.ProductStatus;
 import com.gotkcups.data.ProductChange;
 import com.gotkcups.data.ProductInfo;
 import com.gotkcups.json.Utilities;
@@ -33,7 +34,7 @@ public class BuildProductChanges {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        
+
         long start = System.currentTimeMillis();
         System.out.println("start: " + new Date(start));
         Data data = Data.getData();
@@ -45,17 +46,20 @@ public class BuildProductChanges {
                 "select * from shopifyurls where productid is not null and productid like '%' and variantsku like '%' and hidden!='Y' and url like 'http%' group by productid,variantid order by productid,variantid,url",
                 null, true, Load.ALL));
         data.getSource().open();
-        StringBuilder display = new StringBuilder();
         EntityFacade.add(new ProductChange());
         EntityFacade.executeQuery("truncate productchanges;");
         EntityFacade.executeQuery("truncate productinfos;");
-        Collection<ProductInfo>INFOS = new ArrayList<>();
-        Collection<ProductChange>CHANGES = new ArrayList<>();
+        Collection<ProductInfo> INFOS = new ArrayList<>();
+        Collection<ProductChange> CHANGES = new ArrayList<>();
+        Collection<Packet> packets = new ArrayList<>();
         do {
             Packet p = new Packet();
             p.setProductid(data.getSource().getString("productid"));
             p.setVariantid(data.getSource().getString("variantid"));
-            PageServer.fetch(p);
+            packets.add(p);
+        } while (data.getSource().next());
+        packets.stream().forEach(p -> {
+            PageServer.fetchCostAndPricing(p);
             synchronized (p) {
                 try {
                     p.wait();
@@ -70,22 +74,31 @@ public class BuildProductChanges {
                     o = optional.get();
                     ProductChange change = null;
                     if (o.isInstock()) {
-                        o.setAlpha(Product.ProductStatus.PRODUCT_FIRST);
+                        int max = Math.max((int) (3500 / o.getPrice()), 120);
+                        int min = Math.max((int) (600 / o.getPrice()), 12);
+                        o.setAlpha(ProductStatus.PRODUCT_FIRST);
                         if (Math.abs(o.getPrice() - o.getMinprice()) > 1.00 && o.isInstock() != o.isCurrentStock()) {
-                            o.setReason(Product.ProductStatus.PRODUCT_PRICE_STOCK_CHANGE);
+                            o.setReason(ProductStatus.PRODUCT_PRICE_STOCK_CHANGE);
                             change = EntityFacade.create(o);
                         } else if (o.isInstock() != o.isCurrentStock()) {
-                            o.setReason(Product.ProductStatus.PRODUCT_IN_STOCK);
+                            o.setReason(ProductStatus.PRODUCT_IN_STOCK);
                             change = EntityFacade.create(o);
                         } else if (Math.abs(o.getPrice() - o.getMinprice()) > 1.00) {
-                            o.setReason(Product.ProductStatus.PRODUCT_PRICE_CHANGE);
-                            change = EntityFacade.create(o );
-                        }
-                    } else {
-                        if (o.isInstock() != o.isCurrentStock()) {
-                            o.setReason(Product.ProductStatus.PRODUCT_OUT_OF_STOCK);
+                            o.setReason(ProductStatus.PRODUCT_PRICE_CHANGE);
+                            change = EntityFacade.create(o);
+                        } else if (o.getDefaultInv() < min || o.getDefaultInv() > max) {
+                            o.setReason(ProductStatus.PRODUCT_INV_QTY_CHANGE);
                             change = EntityFacade.create(o);
                         }
+                        if (change != null) {
+                            change.setInvqty(max);
+                        }
+                    } else if (o.getStatus().equals(ProductStatus.PAGE_NOT_AVAILABLE.toString())) {
+                        o.setReason(ProductStatus.PAGE_NOT_AVAILABLE);
+                        change = EntityFacade.create(o);
+                    } else if (o.isInstock() != o.isCurrentStock()) {
+                        o.setReason(Product.ProductStatus.PRODUCT_OUT_OF_STOCK);
+                        change = EntityFacade.create(o);
                     }
                     if (change != null) {
                         CHANGES.add(change);
@@ -94,13 +107,17 @@ public class BuildProductChanges {
                 }
             }
             p.getProducts().stream().sorted().forEach(INFOS::add);
-        } while (data.getSource().next());
+        });
+        long mark = System.currentTimeMillis();
         EntityFacade.bulk(INFOS);
+        long mark2 = System.currentTimeMillis();
         EntityFacade.bulk(CHANGES);
         long end = System.currentTimeMillis();
         System.out.println("start: " + new Date(start));
+        System.out.println("mark: " + new Date(mark));
+        System.out.println("mark2: " + new Date(mark2));
         System.out.println("end: " + new Date(end));
         System.exit(0);
     }
-    
+
 }

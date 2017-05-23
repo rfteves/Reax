@@ -50,6 +50,7 @@ public class ProductInfo implements Product, Comparator<ProductInfo>, Comparable
     private double defaultShipping;
     private int minqty;
     private int defaultMinqty;
+    private int defaultInv;
     
     public ProductInfo() {
         this.cost = -1;
@@ -399,5 +400,19 @@ public class ProductInfo implements Product, Comparator<ProductInfo>, Comparable
     private transient ProductStatus productStatus;
     public ProductStatus getProductStatus() {
         return this.productStatus;
+    }
+
+    /**
+     * @return the defaultInv
+     */
+    public int getDefaultInv() {
+        return defaultInv;
+    }
+
+    /**
+     * @param defaultInv the defaultInv to set
+     */
+    public void setDefaultInv(int defaultInv) {
+        this.defaultInv = defaultInv;
     }
 }

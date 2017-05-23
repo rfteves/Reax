@@ -5,11 +5,10 @@
  */
 package com.gotkcups.pageprocessors;
 
-import com.gotkcups.data.EntityFacade;
-import com.gotkcups.data.ProductInfo;
 import com.gotkcups.servers.UrlProductInfo;
-import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *

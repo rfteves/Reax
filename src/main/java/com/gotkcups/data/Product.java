@@ -24,7 +24,8 @@ public interface Product {
         PRODUCT_PRICE_STOCK_CHANGE("Price and stock change"),
         PRODUCT_FIRST("Alpha product"),
         PRODUCT_OTHERS("Secondary"),
-        PRODUCT_NOT_VALID("Product not valid");
+        PRODUCT_NOT_VALID("Product not valid"),
+        PRODUCT_INV_QTY_CHANGE("Product inv qty change");
         
         private String status;
         private ProductStatus(String status) {

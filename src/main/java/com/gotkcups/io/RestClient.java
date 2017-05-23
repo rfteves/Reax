@@ -30,6 +30,37 @@ public class RestClient {
         RestClient.initKeys();
     }
 
+    public static String processGetHtml(String url) {
+        String json = null;
+        Scanner in = null;
+        try {
+            StringBuilder sb = new StringBuilder();
+            HttpClient httpClient = HttpClientBuilder.create().build();
+            HttpGet getRequest = new HttpGet(url);
+            getRequest.addHeader("Content-Type", "text/html;charset=UTF-8");
+            getRequest.addHeader("Accept", "text/html;charset=UTF-8");
+            getRequest.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36 Edge/12.0");
+            HttpResponse response = httpClient.execute(getRequest);
+            in = new Scanner(response.getEntity().getContent());
+            while (in.hasNext()) {
+                sb.append(in.nextLine());
+                sb.append("\r\n");
+            }
+            if (response.getStatusLine().getStatusCode() != 200) {
+                sb.insert(0, "\r\n\r\n\r\n");
+                throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode() + sb.toString());
+            }
+            json = sb.toString();
+        } catch (Throwable ex) {
+            ex.printStackTrace();
+        } finally {
+            if (in != null) {
+                in.close();
+            }
+            return json;
+        }
+    }
+
     public static String processGet(String url) {
         String json = null;
         Scanner in = null;
@@ -49,7 +80,6 @@ public class RestClient {
                 sb.insert(0, "\r\n\r\n\r\n");
                 throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode() + sb.toString());
             }
-            System.out.println(sb.toString());
             json = sb.toString();
         } catch (Throwable ex) {
             ex.printStackTrace();
@@ -152,12 +182,6 @@ public class RestClient {
         }
     }
 
-    public static String getProduct(String env, long id) {
-        StringBuilder sb = new StringBuilder(RestClient.getKeyPass(env));
-        sb.append(String.format("/admin/products/%d.json", id));
-        return RestClient.processGet(sb.toString());
-    }
-
     public static String getProductVariant(String env, String variant_id) {
         StringBuilder sb = new StringBuilder(RestClient.getKeyPass(env));
         sb.append(String.format("/admin/variants/%s.json", variant_id));
@@ -228,11 +252,23 @@ public class RestClient {
         return RestClient.processGet(sb.toString());
     }
 
-    public static String getProduct(String env, long productId, Map<String, String>params) {
+    public static String getProductUrl(String env, long productId, Map<String, String>params) {
         StringBuilder sb = new StringBuilder(RestClient.getKeyPass(env));
         sb.append(String.format("/admin/products/%d.json", productId));
         RestClient.processParams(sb, params);
-        String so = RestClient.processGet(sb.toString());
+        return sb.toString();
+    }
+    
+    public static String updateProduct(String env, long productId, String data) {
+        String retval = null;
+        String url = getProductUrl(env, productId, null);
+        retval = processPut(url, data);
+        return retval;
+    }
+
+    public static String getProduct(String env, long productId, Map<String, String>params) {
+        String url = getProductUrl(env, productId, params);
+        String so = RestClient.processGet(url);
         return so;
     }
 

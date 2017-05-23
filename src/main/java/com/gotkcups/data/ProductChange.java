@@ -40,7 +40,7 @@ public class ProductChange implements Serializable {
     private boolean inStock;
     private boolean currentStock;
     private boolean applied;
-    
+    private int invqty;
 
     public Long getId() {
         return id;
@@ -256,6 +256,20 @@ public class ProductChange implements Serializable {
      */
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    /**
+     * @return the invqty
+     */
+    public int getInvqty() {
+        return invqty;
+    }
+
+    /**
+     * @param invqty the invqty to set
+     */
+    public void setInvqty(int invqty) {
+        this.invqty = invqty;
     }
     
 }

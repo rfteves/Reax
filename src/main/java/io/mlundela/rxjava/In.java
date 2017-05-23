@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.Socket;
 // import java.net.HttpURLConnection;
@@ -34,7 +35,7 @@ public class In {
     ///// begin: section (1 of 2) of code duplicated from In to StdIn.
     
     // assume Unicode UTF-8 encoding
-    private static final String CHARSET_NAME = "UTF-8";
+    public static final String CHARSET_NAME = "UTF-8";
 
     // assume language = English, country = US for consistency with System.out.
     private static final Locale LOCALE = Locale.US;
@@ -156,11 +157,15 @@ public class In {
                 url = new URL(name);
             }
 
-            URLConnection site = url.openConnection();
+            //URLConnection site = url.openConnection();
 
             // in order to set User-Agent, replace above line with these two
-            // HttpURLConnection site = (HttpURLConnection) url.openConnection();
-            // site.addRequestProperty("User-Agent", "Mozilla/4.76");
+             HttpURLConnection site = (HttpURLConnection) url.openConnection();
+             site.setRequestMethod("GET");
+             site.setDoInput(true);
+             site.setDoOutput(false);
+             
+             site.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36 Edge/12.0");
 
             InputStream is     = site.getInputStream();
             scanner            = new Scanner(new BufferedInputStream(is), CHARSET_NAME);

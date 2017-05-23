@@ -11,12 +11,15 @@ import com.gotkcups.data.Product.ProductStatus;
 import com.gotkcups.json.GsonData;
 import com.gotkcups.json.GsonMapper;
 import com.gotkcups.servers.UrlProductInfo;
+import io.mlundela.rxjava.In;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 
 /**
@@ -32,6 +35,7 @@ public class SamsclubProcessor {
         //<span itemprop="productID">584194</span>
         String s = uds.get(0).getProduct().getVariantsku();
         String id = String.format("<span itemprop=productID>%s</span>", s.substring(0, s.length() - 1));
+        String id2 = String.format("Item # %s", s.substring(0, s.length() - 1));//Item # 556159
         String html = uds.get(0).getHtml();
         GsonData products = null;
         if (html == null) {
@@ -72,7 +76,10 @@ public class SamsclubProcessor {
                     }
                 }
             }
-            uds.stream().map(ud -> ud.getProduct()).filter(ud -> !ud.isInstock()).forEach(ud -> {ud.setStatus(ProductStatus.PRODUCT_OUT_OF_STOCK); ud.setInstock(false);});
+            uds.stream().map(ud -> ud.getProduct()).filter(ud -> !ud.isInstock()).forEach(ud -> {
+                ud.setStatus(ProductStatus.PRODUCT_OUT_OF_STOCK);
+                ud.setInstock(false);
+            });
         } else if (html.indexOf(id) != -1) {
             UrlProductInfo ud = uds.get(0);
             if (html.indexOf("<link itemprop=availability href=\"http://schema.org/InStock\"/>") > 0
@@ -89,6 +96,7 @@ public class SamsclubProcessor {
             } else if (html.indexOf("<link itemprop=availability href=\"http://schema.org/OutOfStock\"/>") > 0) {
                 ud.getProduct().setStatus(Product.ProductStatus.PRODUCT_OUT_OF_STOCK);
             } else {
+                ud.getProduct().setInstock(false);
                 int flag = html.indexOf("online_stock_status\":\"outofstock");
                 if (flag != -1) {
                     uds.stream().forEach(p -> p.getProduct().setStatus(Product.ProductStatus.PRODUCT_OUT_OF_STOCK));
@@ -97,6 +105,29 @@ public class SamsclubProcessor {
                 }
 
             }
+        } else if (html.indexOf(id2) != -1) {
+            if (html.indexOf("this item is not available in your selected club") != -1 ||
+                    html.indexOf("Select a club for price and availability") != -1) {
+                uds.stream().forEach(p -> p.getProduct().setStatus(Product.ProductStatus.PRODUCT_OUT_OF_STOCK));
+            } else if (html.indexOf(">Add to cart</button>") != -1) {
+                UrlProductInfo ud = uds.get(0);
+                ud.getProduct().setInstock(true);
+                ud.getProduct().setStatus(Product.ProductStatus.PRODUCT_IN_STOCK);
+                ud.getProduct().setCost(retrieveCost(html));
+                if (html.indexOf(">Free shipping</span>") != -1) {
+                    ud.getProduct().setShipping(0);
+                } else {
+                    ud.getProduct().setShipping(ud.getProduct().getDefaultShipping());
+                }
+            } else {
+                uds.stream().forEach(p -> p.getProduct().setStatus(Product.ProductStatus.PAGE_NOT_AVAILABLE));
+                try {
+                    FileUtils.writeStringToFile(new File(String.format("%s.html", uds.get(0).getProduct().getProductid())), html, In.CHARSET_NAME);
+                } catch (IOException ex) {
+                    Logger.getLogger(SamsclubProcessor.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
         } else {
             uds.stream().forEach(p -> p.getProduct().setStatus(Product.ProductStatus.PRODUCT_NOT_FOUND));
         }
@@ -132,7 +163,9 @@ public class SamsclubProcessor {
     private static double retrieveCost(String html) {
         double retval = -1;
         String[] patterns = {"<span class=\"striked strikedPrice\">\\$[0-9]{1,}.[0-9]{2}</span>",
+            "<span itemprop=price>[0-9]{1,}.[0-9]{2}</span>",
             "<span class=hidden itemprop=price>[0-9]{1,}.[0-9]{2}</span>",
+            "<span class=Price-mantissa>[0-9]{1,}.[0-9]{2}</span>",
             "<span itemprop=priceCurrency content=USD>\\$</span><span itemprop=price>[0-9]{1,}.[0-9]{2}</span>"};
         for (String pattern : patterns) {
             Matcher m = Pattern.compile(pattern).matcher(html);
@@ -147,6 +180,24 @@ public class SamsclubProcessor {
         if (retval == -1) {
             // It's probabl in two places
             String[] pats = {"<span class=price>[0-9]{1,}</span>", "<span class=superscript>[0-9]{2}</span>"};
+            for (String pattern : pats) {
+                Matcher m = Pattern.compile(pattern).matcher(html);
+                if (m.find()) {
+                    m = Pattern.compile("[0-9]{1,}").matcher(m.group());
+                    if (m.find()) {
+                        double r = Double.parseDouble(m.group());
+                        if (retval == -1) {
+                            retval = r;
+                        } else {
+                            retval += r / 100;
+                        }
+                    }
+                }
+            }
+        }
+        if (retval == -1) {
+            // It's probabl in two places
+            String[] pats = {"<span class=Price-characteristic>[0-9]{1,}</span>", "<span class=Price-mantissa>[0-9]{2}</span>"};
             for (String pattern : pats) {
                 Matcher m = Pattern.compile(pattern).matcher(html);
                 if (m.find()) {

@@ -10,6 +10,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -109,4 +110,39 @@ public class GsonMapper {
             root.put(putkey, null);
         }
     }
+    
+    Map<String,JsonElement>elements=new LinkedHashMap<>();
+    private void mapvalues(String putkey, JsonElement element) {
+        if (DEBUG_ELEMENT.equals(putkey)) {
+            System.out.println();
+        }
+        if (element.isJsonObject()) {
+            Set<Map.Entry<String, JsonElement>> members = element.getAsJsonObject().entrySet();
+            members.stream().forEach(o -> {
+                mapvalues(constructKey(putkey, o.getKey()), o.getValue());
+            });
+        } else if (element.isJsonArray()) {
+            JsonArray arrays = element.getAsJsonArray();
+            if (arrays.size() == 0) {
+                elements.put(putkey, element);
+            } else {
+                elements.put(putkey, new JsonArray());
+                int index = 0;
+                for (JsonElement val : arrays) {
+                    mapvalues(putkey.concat("." + ++index), val);
+                }
+            }
+        } else {
+            mapvalues(putkey, element);
+        }
+    }
+    
+    private static String constructKey(String putkey, String key) {
+        if (putkey != null && putkey.length() > 0) {
+            return putkey.concat("]").concat(key);
+        } else {
+            return putkey;
+        }
+    }
+    
 }

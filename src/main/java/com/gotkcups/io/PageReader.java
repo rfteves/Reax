@@ -6,6 +6,7 @@
 package com.gotkcups.io;
 
 import com.gotkcups.servers.HtmlCached;
+import io.mlundela.rxjava.In;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,13 +34,19 @@ public class PageReader {
             return;
         }
         try {
-            Thread.sleep(1000);
+            Thread.sleep(750);
         } catch (InterruptedException ex) {
             Logger.getLogger(PageReader.class.getName()).log(Level.SEVERE, null, ex);
         }
         CONTENT.setLength(0);
-        Scanner in = null;
-        try {
+        //Scanner in = null;
+        //In page = new In(ud.getUrl());
+        String html = RestClient.processGetHtml(ud.getUrl());
+        HTMLS.put(ud.getUrl(), html);
+        TIMES.put(ud.getUrl(), System.currentTimeMillis() + (1000 * 60 * 60));
+        ud.setHtml(HTMLS.get(ud.getUrl()));
+        //page.close();
+        /*try {
             URL url = new URL(ud.getUrl());
             in = new Scanner(url.openStream());
             while (in.hasNext()) {
@@ -55,7 +62,7 @@ public class PageReader {
             if (in != null) {
                 in.close();
             }
-        }
+        }*/
 
     }
 }
