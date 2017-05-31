@@ -398,6 +398,7 @@ public class ProductInfo implements Product, Comparator<ProductInfo>, Comparable
     }
     
     private transient ProductStatus productStatus;
+    private transient String html;
     public ProductStatus getProductStatus() {
         return this.productStatus;
     }
@@ -414,5 +415,19 @@ public class ProductInfo implements Product, Comparator<ProductInfo>, Comparable
      */
     public void setDefaultInv(int defaultInv) {
         this.defaultInv = defaultInv;
+    }
+
+    /**
+     * @return the html
+     */
+    public String getHtml() {
+        return html;
+    }
+
+    /**
+     * @param html the html to set
+     */
+    public void setHtml(String html) {
+        this.html = html;
     }
 }

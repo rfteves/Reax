@@ -13,6 +13,7 @@ import com.gotkcups.data.Product.ProductStatus;
 import com.gotkcups.servers.UrlProductInfo;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,29 @@ public class CostcoProcessor {
     public static void costing(List<UrlProductInfo> uds) {
         String html = uds.get(0).getHtml();
         dig(html, uds);
+    }
+    
+    public static Map<String,String>dig(String html) {
+        if (html == null) {
+            return null;
+        }
+        if (html.indexOf("<h1>Product Not Found</h1>") > 0) {
+            return null;
+        }
+        Map<String,String> values = new HashMap<>();
+        if (html.indexOf("var options = ") > 0) {
+            int start = html.indexOf("var options = ") + 14;
+            int end = html.indexOf("];", start) + 1;
+            String options = html.substring(start, end).replaceAll("[\n\r\t]", "").replaceAll("[ ]{2,}", " ");
+            values.put("options", options);
+        }
+        if (html.indexOf("var products = ") > 0) {
+            int start = html.indexOf("var products = ") + 15;
+            int end = html.indexOf("];", start) + 1;
+            String products = html.substring(start, end).replaceAll("[\n\r\t]", "").replaceAll("[ ]{2,}", " ");
+            values.put("products", products);
+        }
+        return values;
     }
     
     private static void dig(String html, List<UrlProductInfo> uds) {
@@ -134,7 +158,7 @@ public class CostcoProcessor {
                             ud.getProduct().setStatus(ProductStatus.PRODUCT_IN_STOCK);
                         } else {
                             double qty = Double.parseDouble(dg.getString("ordinal"));
-                            ud.getProduct().setInstock(qty > 10);
+                            ud.getProduct().setInstock(qty > 25);
                             if (ud.getProduct().isInstock()) {
                                 ud.getProduct().setStatus(ProductStatus.PRODUCT_IN_STOCK);
                             } else {

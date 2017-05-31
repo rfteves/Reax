@@ -5,11 +5,8 @@
  */
 package com.gotkcups.servers;
 
-import com.borland.dx.dataset.DataRow;
-import com.borland.dx.dataset.DataSetData;
 import com.gotkcups.data.ProductInfo;
 import java.io.Serializable;
-import java.util.Collection;
 
 /**
  *

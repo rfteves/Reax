@@ -16,13 +16,17 @@ import com.gotkcups.data.Product.ProductStatus;
 import com.gotkcups.data.ProductChange;
 import com.gotkcups.data.ProductInfo;
 import com.gotkcups.json.Utilities;
+import com.gotkcups.pageprocessors.SamsclubProcessor;
 import com.gotkcups.servers.PageServer;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -75,7 +79,7 @@ public class BuildProductChanges {
                     ProductChange change = null;
                     if (o.isInstock()) {
                         int max = Math.max((int) (3500 / o.getPrice()), 120);
-                        int min = Math.max((int) (600 / o.getPrice()), 12);
+                        int min = Math.max((int) (1200 / o.getPrice()), 20);
                         o.setAlpha(ProductStatus.PRODUCT_FIRST);
                         if (Math.abs(o.getPrice() - o.getMinprice()) > 1.00 && o.isInstock() != o.isCurrentStock()) {
                             o.setReason(ProductStatus.PRODUCT_PRICE_STOCK_CHANGE);
@@ -86,6 +90,11 @@ public class BuildProductChanges {
                         } else if (Math.abs(o.getPrice() - o.getMinprice()) > 1.00) {
                             o.setReason(ProductStatus.PRODUCT_PRICE_CHANGE);
                             change = EntityFacade.create(o);
+                                try {
+                                    FileUtils.writeStringToFile(new File(o.getVariantsku().concat(".html")), o.getHtml(), "UTF-8");
+                                } catch (IOException ex) {
+                                    Logger.getLogger(SamsclubProcessor.class.getName()).log(Level.SEVERE, null, ex);
+                                }
                         } else if (o.getDefaultInv() < min || o.getDefaultInv() > max) {
                             o.setReason(ProductStatus.PRODUCT_INV_QTY_CHANGE);
                             change = EntityFacade.create(o);

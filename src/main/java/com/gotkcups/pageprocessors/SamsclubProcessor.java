@@ -11,7 +11,6 @@ import com.gotkcups.data.Product.ProductStatus;
 import com.gotkcups.json.GsonData;
 import com.gotkcups.json.GsonMapper;
 import com.gotkcups.servers.UrlProductInfo;
-import com.gotkcups.io.In;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -121,11 +120,6 @@ public class SamsclubProcessor {
                 }
             } else {
                 uds.stream().forEach(p -> p.getProduct().setStatus(Product.ProductStatus.PAGE_NOT_AVAILABLE));
-                try {
-                    FileUtils.writeStringToFile(new File(String.format("%s.html", uds.get(0).getProduct().getProductid())), html, In.CHARSET_NAME);
-                } catch (IOException ex) {
-                    Logger.getLogger(SamsclubProcessor.class.getName()).log(Level.SEVERE, null, ex);
-                }
             }
 
         } else {
@@ -165,6 +159,7 @@ public class SamsclubProcessor {
         String[] patterns = {"<span class=\"striked strikedPrice\">\\$[0-9]{1,}.[0-9]{2}</span>",
             "<span itemprop=price>[0-9]{1,}.[0-9]{2}</span>",
             "<span class=hidden itemprop=price>[0-9]{1,}.[0-9]{2}</span>",
+            "<span class=sc-channel-savings-list-price>\\$[0-9]{1,}.[0-9]{2}</span>",
             "<span class=Price-mantissa>[0-9]{1,}.[0-9]{2}</span>",
             "<span itemprop=priceCurrency content=USD>\\$</span><span itemprop=price>[0-9]{1,}.[0-9]{2}</span>"};
         for (String pattern : patterns) {
@@ -172,8 +167,7 @@ public class SamsclubProcessor {
             if (m.find()) {
                 m = Pattern.compile("[0-9]{1,}.[0-9]{2}").matcher(m.group());
                 if (m.find()) {
-                    retval = Double.parseDouble(m.group());
-                    break;
+                    retval = Math.max(retval,  Double.parseDouble(m.group()));
                 }
             }
         }

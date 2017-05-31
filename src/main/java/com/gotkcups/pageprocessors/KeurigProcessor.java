@@ -26,8 +26,6 @@ public class KeurigProcessor {
     public final static float KEURIG_DISCOUNT_BEVERAGES = 0.125f;
     public static void costing(List<UrlProductInfo> uds) {
         String html = uds.get(0).getHtml();
-        GsonData options = null;
-        GsonData products = null;
         if (html == null) {
             uds.stream().forEach(p -> p.getProduct().setStatus(Product.ProductStatus.PAGE_NOT_AVAILABLE));
             return;

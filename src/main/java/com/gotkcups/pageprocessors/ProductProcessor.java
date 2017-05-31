@@ -7,8 +7,6 @@ package com.gotkcups.pageprocessors;
 
 import com.gotkcups.servers.UrlProductInfo;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -28,11 +26,13 @@ public abstract class ProductProcessor {
             KeurigProcessor.costing(uds);
         } else if (uds.get(0).getUrl().contains("samsclub.com")) {
             SamsclubProcessor.costing(uds);
+        } else if (uds.get(0).getUrl().contains("bjs.com")) {
+            BjsProcessor.costing(uds);
         }
     }
 
     public static void pricing(List<UrlProductInfo> uds) {
-        uds.stream().map(p -> p.getProduct()).filter(k -> k.isInstock()).forEach(o -> {
+        uds.stream().map(p -> {p.getProduct().setHtml(p.getHtml());return p.getProduct();}).filter(k -> k.isInstock()).forEach(o -> {
             double price = calculatePrice(o.getCost(), o.getMinqty(), o.getShipping(), o.isTaxable(), o.getListCost() != -1);
             o.setPrice(price);
             double listPrice = 0;

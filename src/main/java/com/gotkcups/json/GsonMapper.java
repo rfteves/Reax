@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 
@@ -24,7 +25,7 @@ import org.apache.commons.io.FileUtils;
  */
 public class GsonMapper {
 
-    public static String DEBUG_ELEMENT = "availableSKUs";
+    public static String DEBUG_ELEMENT = "values";
 
     public static void main(String[] s) throws Exception {
         String data = FileUtils.readFileToString(new File("./productsx.json"), "UTF-8");
@@ -46,14 +47,14 @@ public class GsonMapper {
     private GsonData[] parentObj = new GsonData[1];
 
     private void mapvalues(JsonElement element, GsonData root, String putkey) {
-        if (DEBUG_ELEMENT.equals(putkey)) {
+        if (putkey != null && DEBUG_ELEMENT.contains(putkey)) {
             System.out.println();
         }
         if (element.isJsonObject()) {
             Set<Map.Entry<String, JsonElement>> members = element.getAsJsonObject().entrySet();
             Map<Boolean, List<Entry<String, JsonElement>>> entries = members.stream().collect(Collectors.partitioningBy(member -> root == null || member.getValue().isJsonArray() || member.getValue().isJsonObject()));
             entries.get(false).stream().forEach(entry -> {
-                if (DEBUG_ELEMENT.equals(entry.getKey())) {
+                if (entry.getKey() != null && DEBUG_ELEMENT.contains(entry.getKey())) {
                     System.out.println();
                 }
                 mapvalues(entry.getValue(), root, entry.getKey());
@@ -110,33 +111,50 @@ public class GsonMapper {
             root.put(putkey, null);
         }
     }
-    
-    Map<String,JsonElement>elements=new LinkedHashMap<>();
-    private void mapvalues(String putkey, JsonElement element) {
-        if (DEBUG_ELEMENT.equals(putkey)) {
+
+    public static Map<GsonKey, JsonElement> getJsonElements(String json) {
+        GsonMapper mapper = new GsonMapper();
+        JsonElement element = new JsonParser().parse(json);
+        mapper.mapvalues("__", element, 0);
+        return mapper.elements;
+    }
+
+    private Map<GsonKey, JsonElement> elements = new LinkedHashMap<>();
+
+    private void mapvalues(String putkey, JsonElement element, int treeLevel) {
+        if (putkey.contains(DEBUG_ELEMENT)) {
             System.out.println();
         }
         if (element.isJsonObject()) {
             Set<Map.Entry<String, JsonElement>> members = element.getAsJsonObject().entrySet();
             members.stream().forEach(o -> {
-                mapvalues(constructKey(putkey, o.getKey()), o.getValue());
+                if (o.getKey().contains(DEBUG_ELEMENT)) {
+                    System.out.println();
+                }
+                elements.put(GsonKey.getInstance(putkey.concat("]")), element);
+                mapvalues(constructKey(putkey, o.getKey()), o.getValue(), treeLevel + 1);
             });
         } else if (element.isJsonArray()) {
             JsonArray arrays = element.getAsJsonArray();
             if (arrays.size() == 0) {
-                elements.put(putkey, element);
+                elements.put(GsonKey.getInstance(putkey.concat("]")), element);
             } else {
-                elements.put(putkey, new JsonArray());
+                elements.put(GsonKey.getInstance(putkey.concat(".0]")), new JsonArray());
                 int index = 0;
                 for (JsonElement val : arrays) {
-                    mapvalues(putkey.concat("." + ++index), val);
+                    if (val.isJsonPrimitive()) {
+                        mapvalues(putkey.concat("." + ++index).concat("]"), val, treeLevel + 1);
+                    } else {
+                        mapvalues(putkey.concat("." + ++index), val, treeLevel + 1);
+                    }
+                    
                 }
             }
         } else {
-            mapvalues(putkey, element);
+            elements.put(GsonKey.getInstance(putkey), element);
         }
     }
-    
+
     private static String constructKey(String putkey, String key) {
         if (putkey != null && putkey.length() > 0) {
             return putkey.concat("]").concat(key);
@@ -144,5 +162,5 @@ public class GsonMapper {
             return putkey;
         }
     }
-    
+
 }

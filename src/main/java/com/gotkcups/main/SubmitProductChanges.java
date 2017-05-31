@@ -42,7 +42,7 @@ public class SubmitProductChanges {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException {
-        
+
         //String j = FileUtils.readFileToString(new File("D:\\Users\\rfteves\\products.json"), "UTF-8");
         //GsonData g = GsonMapper.getInstance(j);
         initData();
@@ -50,27 +50,27 @@ public class SubmitProductChanges {
         Collection<ProductChange> changes = EntityFacade.findAll(ProductChange.class);
         Map<String, String> params = new HashMap<String, String>();
         params.put("fields", "id,variants");
-        /*changes.stream().filter(p -> p.isInStock() == false).forEach(p -> {
+        changes.stream().filter(p -> p.isInStock() == false && !p.getVariantsku().toLowerCase().endsWith("b")).forEach(p -> {
+            System.out.println(p.getProductid() + ":" + p.getVariantsku() + p.getDescription() + ", price: " + p.getPrice() + ", listprice: " + p.getListPrice() + ", instock: " + p.isInStock());
             String json = RestClient.getProduct("prod", Long.parseLong(p.getProductid()), params);
             ShopifyProducts sp = gson.fromJson(json, ShopifyProducts.class);
             sp.getProduct().getVariants().stream().filter(pc -> pc.getId() == Long.parseLong(p.getVariantid())).forEach(pc -> {
-                System.out.println(p.getProductid() + ":" + p.getVariantsku() + p.getDescription() + ", price: " + p.getPrice() + ", listprice: " + p.getListPrice() + ", instock: " + p.isInStock());
                 pc.setInventory_quantity(0);
             });
             json = gson.toJson(sp);
             json = RestClient.updateProduct("prod", Long.parseLong(p.getProductid()), json);
             update(p);
             System.out.println("-*+*+*+*+*-");
-        });*/
-        changes.stream().filter(p -> p.isInStock() == true).forEach(p -> {
+        });
+        changes.stream().filter(p -> p.isInStock() == true && !p.getVariantsku().toLowerCase().endsWith("b")).forEach(p -> {
+            System.out.println(p.getProductid() + ":" + p.getVariantsku() + p.getDescription() + ", price: " + p.getPrice() + ", listprice: " + p.getListPrice() + ", instock: " + p.isInStock());
             String json = RestClient.getProduct("prod", Long.parseLong(p.getProductid()), params);
             ShopifyProducts sp = gson.fromJson(json, ShopifyProducts.class);
             sp.getProduct().getVariants().stream().filter(pc -> pc.getId() == Long.parseLong(p.getVariantid())).forEach(pc -> {
-                System.out.println(p.getProductid() + ":" + p.getVariantsku() + p.getDescription() + ", price: " + p.getPrice() + ", listprice: " + p.getListPrice() + ", instock: " + p.isInStock());
                 pc.setInventory_quantity(p.getInvqty());
                 pc.setPrice("" + p.getPrice());
                 pc.setCompare_at_price("" + p.getListPrice());
-                
+
             });
             json = gson.toJson(sp);
             json = RestClient.updateProduct("prod", Long.parseLong(p.getProductid()), json);

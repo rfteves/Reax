@@ -22,8 +22,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.persistence.EntityManager;
 import javax.persistence.Persistence;
 import javax.persistence.EntityManagerFactory;
@@ -39,7 +42,7 @@ public class AnyTest {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        failsafe();
+        System.out.println(Pattern.compile("^[0-9]").matcher("0sdfsdfsd").find());
     }
     
     private static void failsafe() {
@@ -122,4 +125,9 @@ public class AnyTest {
         System.out.println(span.getAnchor().get(0).getAnchor());
     }
 
+    /*public boolean equals(Object obj) {
+        return Optional.ofNullable(obj)
+                .filter(that -> instanceof Test)
+                .map(that -> (Test) that);
+    }*/
 }

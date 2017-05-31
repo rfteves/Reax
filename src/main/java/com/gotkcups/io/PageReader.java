@@ -6,10 +6,8 @@
 package com.gotkcups.io;
 
 import com.gotkcups.servers.HtmlCached;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

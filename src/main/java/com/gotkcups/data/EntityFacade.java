@@ -5,17 +5,12 @@
  */
 package com.gotkcups.data;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.Collection;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 import javax.persistence.criteria.CriteriaQuery;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
 
 /**
  *
@@ -62,7 +57,7 @@ public class EntityFacade {
     public static <T> void bulk(Collection<T> objects) {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
-        objects.stream().forEach(em::persist);
+        objects.stream().forEach(em::merge);
         em.getTransaction().commit();
         em.close();
     }
