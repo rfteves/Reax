@@ -12,7 +12,10 @@ import com.gotkcups.json.GsonMapper;
 import com.gotkcups.data.Product.ProductStatus;
 import com.gotkcups.servers.UrlProductInfo;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -80,6 +83,31 @@ public class CostcoProcessor {
                 Logger.getLogger(CostcoProcessor.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        boolean expired = false;
+        if (html.indexOf("<p class=\"PromotionalText\">") != -1) {
+            int start = html.indexOf("<p class=\"PromotionalText\">") + "<p class=\"PromotionalText\">".length();
+            int end = html.indexOf("</p>", start);
+            String str = html.substring(start, end);
+            System.out.println(html.substring(start, end));
+            System.out.println(html.substring(start, end));
+            Matcher m = Pattern.compile("through [0-9]{1,2}/[0-9]{1,2}/[0-9]{2}").matcher(str);
+            if (m.find())
+            {
+                m = Pattern.compile("[0-9]{1,2}/[0-9]{1,2}/[0-9]{2}").matcher(m.group());
+                if (m.find()) {
+                    SimpleDateFormat sdb = new SimpleDateFormat("M/d/yy");
+                    Calendar date = Calendar.getInstance();
+                    try {
+                        date.setTime(sdb.parse(m.group()));
+                        date.add(Calendar.HOUR, 19);
+                        expired = System.currentTimeMillis() > date.getTimeInMillis();
+                    } catch (ParseException ex) {
+                        Logger.getLogger(CostcoProcessor.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        }
+        
         if (html.indexOf("var products = ") > 0) {
             int start = html.indexOf("var products = ") + 15;
             int end = html.indexOf("];", start) + 1;
@@ -172,8 +200,13 @@ public class CostcoProcessor {
                             cost = listcost;
                             listcost = c;
                         }
-                        ud.getProduct().setCost(cost);
-                        ud.getProduct().setListCost(listcost);
+                        if (expired && listcost > cost) {
+                            ud.getProduct().setCost(listcost);
+                            ud.getProduct().setListCost(-1.0);
+                        } else {
+                            ud.getProduct().setCost(cost);
+                            ud.getProduct().setListCost(listcost);
+                        }
                         ud.getProduct().setShipping(shipping == 0 ? ud.getProduct().getDefaultShipping() : shipping);
                         ud.getProduct().setMinqty(minqty);
                         break;

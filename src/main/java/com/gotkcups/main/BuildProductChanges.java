@@ -10,6 +10,7 @@ import com.borland.dx.sql.dataset.Load;
 import com.borland.dx.sql.dataset.QueryDescriptor;
 import com.cwd.db.Data;
 import com.gotkcups.data.EntityFacade;
+import com.gotkcups.data.MongoDBJDBC;
 import com.gotkcups.data.Packet;
 import com.gotkcups.data.Product;
 import com.gotkcups.data.Product.ProductStatus;
@@ -63,59 +64,19 @@ public class BuildProductChanges {
             packets.add(p);
         } while (data.getSource().next());
         packets.stream().forEach(p -> {
-            PageServer.fetchCostAndPricing(p);
-            synchronized (p) {
-                try {
-                    p.wait();
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(PageServer.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-            ProductInfo o = null;
-            for (boolean b : new boolean[]{true, false}) {
-                Optional<ProductInfo> optional = p.getProducts().stream().sorted().filter(oh -> oh.isInstock() == b).findFirst();
-                if (optional.isPresent()) {
-                    o = optional.get();
-                    ProductChange change = null;
-                    if (o.isInstock()) {
-                        int max = Math.max((int) (3500 / o.getPrice()), 120);
-                        int min = Math.max((int) (1200 / o.getPrice()), 20);
-                        o.setAlpha(ProductStatus.PRODUCT_FIRST);
-                        if (Math.abs(o.getPrice() - o.getMinprice()) > 1.00 && o.isInstock() != o.isCurrentStock()) {
-                            o.setReason(ProductStatus.PRODUCT_PRICE_STOCK_CHANGE);
-                            change = EntityFacade.create(o);
-                        } else if (o.isInstock() != o.isCurrentStock()) {
-                            o.setReason(ProductStatus.PRODUCT_IN_STOCK);
-                            change = EntityFacade.create(o);
-                        } else if (Math.abs(o.getPrice() - o.getMinprice()) > 1.00) {
-                            o.setReason(ProductStatus.PRODUCT_PRICE_CHANGE);
-                            change = EntityFacade.create(o);
-                                try {
-                                    FileUtils.writeStringToFile(new File(o.getVariantsku().concat(".html")), o.getHtml(), "UTF-8");
-                                } catch (IOException ex) {
-                                    Logger.getLogger(SamsclubProcessor.class.getName()).log(Level.SEVERE, null, ex);
-                                }
-                        } else if (o.getDefaultInv() < min || o.getDefaultInv() > max) {
-                            o.setReason(ProductStatus.PRODUCT_INV_QTY_CHANGE);
-                            change = EntityFacade.create(o);
-                        }
-                        if (change != null) {
-                            change.setInvqty(max);
-                        }
-                    } else if (o.getStatus().equals(ProductStatus.PAGE_NOT_AVAILABLE.toString())) {
-                        o.setReason(ProductStatus.PAGE_NOT_AVAILABLE);
-                        change = EntityFacade.create(o);
-                    } else if (o.isInstock() != o.isCurrentStock()) {
-                        o.setReason(Product.ProductStatus.PRODUCT_OUT_OF_STOCK);
-                        change = EntityFacade.create(o);
+            boolean validfetch = false;
+            while (!validfetch) {
+                validfetch = true;
+                PageServer.fetchCostAndPricing(p);
+                synchronized (p) {
+                    try {
+                        p.wait();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(PageServer.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    if (change != null) {
-                        CHANGES.add(change);
-                    }
-                    break;
                 }
+                setInfosChanges(p, INFOS, CHANGES);
             }
-            p.getProducts().stream().sorted().forEach(INFOS::add);
         });
         long mark = System.currentTimeMillis();
         EntityFacade.bulk(INFOS);
@@ -127,6 +88,54 @@ public class BuildProductChanges {
         System.out.println("mark2: " + new Date(mark2));
         System.out.println("end: " + new Date(end));
         System.exit(0);
+    }
+
+    private static void setInfosChanges(Packet p, Collection<ProductInfo> INFOS, Collection<ProductChange> CHANGES) {
+        ProductInfo o = null;
+        for (boolean b : new boolean[]{true, false}) {
+            Optional<ProductInfo> optional = p.getProducts().stream().sorted().filter(oh -> oh.isInstock() == b).findFirst();
+            if (optional.isPresent()) {
+                o = optional.get();
+                ProductChange change = null;
+                if (o.isInstock()) {
+                    int max = Math.max((int) (3500 / o.getPrice()), 120);
+                    int min = Math.max((int) (1200 / o.getPrice()), 20);
+                    o.setAlpha(ProductStatus.PRODUCT_FIRST);
+                    if (Math.abs(o.getPrice() - o.getMinprice()) > 1.00 && o.isInstock() != o.isCurrentStock()) {
+                        o.setReason(ProductStatus.PRODUCT_PRICE_STOCK_CHANGE);
+                        change = EntityFacade.create(o);
+                    } else if (o.isInstock() != o.isCurrentStock()) {
+                        o.setReason(ProductStatus.PRODUCT_IN_STOCK);
+                        change = EntityFacade.create(o);
+                    } else if (o.getPrice() != o.getMinprice()) {
+                        o.setReason(ProductStatus.PRODUCT_PRICE_CHANGE);
+                        change = EntityFacade.create(o);
+                        try {
+                            FileUtils.writeStringToFile(new File(o.getVariantsku().concat(".html")), o.getHtml(), "UTF-8");
+                        } catch (IOException ex) {
+                            Logger.getLogger(SamsclubProcessor.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    } else if (o.getDefaultInv() < min || o.getDefaultInv() > max) {
+                        o.setReason(ProductStatus.PRODUCT_INV_QTY_CHANGE);
+                        change = EntityFacade.create(o);
+                    }
+                    if (change != null) {
+                        change.setInvqty(max);
+                    }
+                } else if (o.getStatus().equals(ProductStatus.PAGE_NOT_AVAILABLE.toString())) {
+                    o.setReason(ProductStatus.PAGE_NOT_AVAILABLE);
+                    change = EntityFacade.create(o);
+                } else if (o.isInstock() != o.isCurrentStock()) {
+                    o.setReason(Product.ProductStatus.PRODUCT_OUT_OF_STOCK);
+                    change = EntityFacade.create(o);
+                }
+                if (change != null) {
+                    CHANGES.add(change);
+                }
+                break;
+            }
+        }
+        p.getProducts().stream().sorted().forEach(INFOS::add);
     }
 
 }

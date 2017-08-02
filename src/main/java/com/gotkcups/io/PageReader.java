@@ -31,7 +31,7 @@ public class PageReader {
             return;
         }
         try {
-            Thread.sleep(750);
+            Thread.sleep(1000);
         } catch (InterruptedException ex) {
             Logger.getLogger(PageReader.class.getName()).log(Level.SEVERE, null, ex);
         }

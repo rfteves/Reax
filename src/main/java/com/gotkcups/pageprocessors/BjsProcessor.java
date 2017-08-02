@@ -46,15 +46,24 @@ public class BjsProcessor {
                     end = html.indexOf("</span>", start);
                     String str = html.substring(start, end);
                     Matcher m = Pattern.compile("[0-9]{1,}.[0-9]{2}").matcher(str);
-                    if (m.find()) {
+                    if (uds.get(0).getProduct().getDefaultCost() > 0) {
+                        uds.get(0).getProduct().setCost(uds.get(0).getProduct().getDefaultCost());
+                    } else if (m.find()) {
                         double cost = Double.parseDouble(m.group());
                         uds.get(0).getProduct().setCost(cost);
+                    }
+                    if (html.indexOf("<div id=freeShipping") != -1) {
+                        uds.get(0).getProduct().setShipping(0);
+                    } else if (uds.get(0).getProduct().getDefaultShipping() > 0) {
+                        uds.get(0).getProduct().setShipping(uds.get(0).getProduct().getDefaultShipping());
                     }
                 } else {
                     uds.get(0).getProduct().setInstock(false);
                     uds.get(0).getProduct().setStatus(ProductStatus.PRODUCT_OUT_OF_STOCK);
                 }
             }
+        } else {
+            System.out.println();
         }
     }
     private final static StringBuilder sb = new StringBuilder();

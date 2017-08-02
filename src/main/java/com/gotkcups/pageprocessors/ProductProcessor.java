@@ -47,7 +47,7 @@ public abstract class ProductProcessor {
         double price = cost * minqty;
         price += shipping;
         if (minqty >= 5 && price > 50) {
-            price -= minqty * 0.36;
+            price -= minqty * 0.20;
         }
         if (taxable) {
             price /= (MARKUP_TAXABLE - (discounted ? MARKUP_DISCOUNT : 0.0));

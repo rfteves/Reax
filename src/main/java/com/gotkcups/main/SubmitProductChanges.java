@@ -50,7 +50,7 @@ public class SubmitProductChanges {
         Collection<ProductChange> changes = EntityFacade.findAll(ProductChange.class);
         Map<String, String> params = new HashMap<String, String>();
         params.put("fields", "id,variants");
-        changes.stream().filter(p -> p.isInStock() == false && !p.getVariantsku().toLowerCase().endsWith("b")).forEach(p -> {
+        changes.stream().filter(p -> p.isInStock() == false).forEach(p -> {
             System.out.println(p.getProductid() + ":" + p.getVariantsku() + p.getDescription() + ", price: " + p.getPrice() + ", listprice: " + p.getListPrice() + ", instock: " + p.isInStock());
             String json = RestClient.getProduct("prod", Long.parseLong(p.getProductid()), params);
             ShopifyProducts sp = gson.fromJson(json, ShopifyProducts.class);
@@ -62,7 +62,7 @@ public class SubmitProductChanges {
             update(p);
             System.out.println("-*+*+*+*+*-");
         });
-        changes.stream().filter(p -> p.isInStock() == true && !p.getVariantsku().toLowerCase().endsWith("b")).forEach(p -> {
+        changes.stream().filter(p -> p.isInStock() == true).forEach(p -> {
             System.out.println(p.getProductid() + ":" + p.getVariantsku() + p.getDescription() + ", price: " + p.getPrice() + ", listprice: " + p.getListPrice() + ", instock: " + p.isInStock());
             String json = RestClient.getProduct("prod", Long.parseLong(p.getProductid()), params);
             ShopifyProducts sp = gson.fromJson(json, ShopifyProducts.class);

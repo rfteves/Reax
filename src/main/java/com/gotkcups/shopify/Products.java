@@ -26,10 +26,12 @@ public class Products {
     
     public static GsonData getAllProducts(String env, Map<String, String> params) throws IOException {
 	GsonData object = null, next = null;
-	int limit = 10;
-	int page = 0;
-	while (limit > 0) {
-	    String take = RestClient.getProducts(env, limit, ++page, params);
+        int page = 0;
+        int limit = 50;
+	while (limit == 50) {
+            params.put("limit", "50");
+            params.put("page", ++page + "");
+	    String take = RestClient.getProducts(env, params);
             System.out.println(take);
 	    if (object == null) {
 		object = GsonMapper.getInstance(take);
@@ -37,9 +39,7 @@ public class Products {
                 next = GsonMapper.getInstance(take);
                 next.getChildren().forEach(object.getChildren()::add);
 	    }
-	    if (next.getChildren().size() < 50) {
-		break;
-	    }
+            limit = next.getChildren().size();
 	}
 	return object;
     }

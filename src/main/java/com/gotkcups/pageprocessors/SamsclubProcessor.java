@@ -172,7 +172,7 @@ public class SamsclubProcessor {
             }
         }
         if (retval == -1) {
-            // It's probabl in two places
+            // It's probably in two places
             String[] pats = {"<span class=price>[0-9]{1,}</span>", "<span class=superscript>[0-9]{2}</span>"};
             for (String pattern : pats) {
                 Matcher m = Pattern.compile(pattern).matcher(html);
@@ -190,7 +190,7 @@ public class SamsclubProcessor {
             }
         }
         if (retval == -1) {
-            // It's probabl in two places
+            // It's probably in two places
             String[] pats = {"<span class=Price-characteristic>[0-9]{1,}</span>", "<span class=Price-mantissa>[0-9]{2}</span>"};
             for (String pattern : pats) {
                 Matcher m = Pattern.compile(pattern).matcher(html);

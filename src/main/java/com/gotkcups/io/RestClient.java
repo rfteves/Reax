@@ -11,10 +11,13 @@ import java.util.Map;
 import java.util.Scanner;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 
@@ -27,6 +30,7 @@ public class RestClient {
     private static Map<String, String> KEYS = new HashMap<String, String>();
 
     static {
+        System.setProperty("org.apache.commons.logging.simplelog.log.org.apache.http.client.protocol.ResponseProcessCookies", "fatal");
         RestClient.initKeys();
     }
 
@@ -37,6 +41,13 @@ public class RestClient {
             StringBuilder sb = new StringBuilder();
             HttpClient httpClient = HttpClientBuilder.create().build();
             HttpGet getRequest = new HttpGet(url);
+            RequestConfig globalConfig = RequestConfig.custom()
+                    .setCookieSpec(CookieSpecs.DEFAULT)
+                    .build();
+            RequestConfig localConfig = RequestConfig.copy(globalConfig)
+                    .setCookieSpec(CookieSpecs.STANDARD_STRICT)
+                    .build();
+            getRequest.setConfig(localConfig);
             getRequest.addHeader("Content-Type", "text/html;charset=UTF-8");
             getRequest.addHeader("Accept", "text/html;charset=UTF-8");
             getRequest.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36 Edge/12.0");
@@ -91,7 +102,7 @@ public class RestClient {
         }
     }
 
-    private static String processPut(String url, String data) {
+    public static String processPut(String url, String data) {
         String json = null;
         Scanner in = null;
         try {
@@ -123,7 +134,7 @@ public class RestClient {
         }
     }
 
-    private static String processPost(String url, String data) {
+    public static String processPost(String url, String data) {
         String json = null;
         Scanner in = null;
         try {
@@ -134,7 +145,6 @@ public class RestClient {
             postRequest.addHeader("Accept", "application/json;charset=UTF-8");
             String jsondata = data.toString();
             StringEntity input = new StringEntity(jsondata);
-            //input.setContentType("application/json;charset=UTF-8");
             postRequest.setEntity(input);
             HttpResponse response = httpClient.execute(postRequest);
             in = new Scanner(response.getEntity().getContent());
@@ -194,12 +204,12 @@ public class RestClient {
         return RestClient.processGet(sb.toString());
     }
 
-    public static String getProducts(String env, int limit, int page, Map<String, String> params) {
+    public static String getProducts(String env, Map<String, String> params) {
         StringBuilder url = new StringBuilder(RestClient.getKeyPass(env));
-        if (params.containsKey("id")) {
-            url.append(String.format("/admin/products/%s.json?limit=%d&page=%d&", params.remove("id").toString(), limit, page));
+        if (params != null && params.containsKey("id")) {
+            url.append(String.format("/admin/products/%s.json", params.remove("id").toString()));
         } else {
-            url.append(String.format("/admin/products.json?limit=%d&page=%d&", limit, page));
+            url.append(String.format("/admin/products.json"));
         }
         RestClient.processParams(url, params);
         return RestClient.processGet(url.toString());
@@ -207,10 +217,11 @@ public class RestClient {
 
     private static void processParams(StringBuilder url, Map<String, String> params) {
         if (params != null && params.size() > 0) {
-            if (!url.toString().contains("?")) {
-                url.append("?");
-            }
+            url.append("?");
+            boolean andit = false;
             for (String key : params.keySet()) {
+                if (andit)url.append("&");
+                andit = true;
                 url.append(key);
                 url.append("=");
                 url.append(params.get(key));
@@ -218,18 +229,16 @@ public class RestClient {
         }
     }
 
-    public static String createMetafieldData(Map<String, Object> params) {
-        String retval = null;
-        for (String key : params.keySet()) {
-        }
-        return retval;
+    public static String createVariantMetaField(String env, long productId, long variantId, String jsondata) {
+        StringBuilder url = new StringBuilder(RestClient.getKeyPass(env));
+        url.append(String.format("/admin/products/%s/variants/%s/metafields.json", productId, variantId));
+        return RestClient.processPost(url.toString(), jsondata);
     }
 
-    public static String createMetaField(String env, long productId, Map<String, Object> params) {
+    public static String getVariantMetaField(String env, long productId, long variantId) {
         StringBuilder url = new StringBuilder(RestClient.getKeyPass(env));
-        url.append(String.format("/admin/products/%d/metafields.json", productId));
-        String metaobject = RestClient.createMetafieldData(params);
-        return RestClient.processPost(url.toString(), metaobject);
+        url.append(String.format("/admin/products/%s/variants/%s/metafields.json", productId, variantId));
+        return RestClient.processGet(url.toString());
     }
 
     public static String createProduct(String env, String json) {
@@ -252,13 +261,13 @@ public class RestClient {
         return RestClient.processGet(sb.toString());
     }
 
-    public static String getProductUrl(String env, long productId, Map<String, String>params) {
+    public static String getProductUrl(String env, long productId, Map<String, String> params) {
         StringBuilder sb = new StringBuilder(RestClient.getKeyPass(env));
         sb.append(String.format("/admin/products/%d.json", productId));
         RestClient.processParams(sb, params);
         return sb.toString();
     }
-    
+
     public static String updateProduct(String env, long productId, String data) {
         String retval = null;
         String url = getProductUrl(env, productId, null);
@@ -266,7 +275,7 @@ public class RestClient {
         return retval;
     }
 
-    public static String getProduct(String env, long productId, Map<String, String>params) {
+    public static String getProduct(String env, long productId, Map<String, String> params) {
         String url = getProductUrl(env, productId, params);
         String so = RestClient.processGet(url);
         return so;
